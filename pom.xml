@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>com.damian</groupId>
 	<artifactId>coinbase</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>0.0.1</version>
 	<name>coinbase-backend</name>
 	<description>coinbase-backend</description>
 	<url/>
