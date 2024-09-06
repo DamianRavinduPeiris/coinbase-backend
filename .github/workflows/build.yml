@@ -1,4 +1,4 @@
-name: test-build
+name: coinbase-build
 
 on:
   push:
@@ -80,7 +80,7 @@ jobs:
             docker pull "$ECR_REGISTRY/$ECR_REPOSITORY:coinbase-latest"
 
             # Run the new container
-            docker run -d --name coinbase -p 80:8080 "$ECR_REGISTRY/$ECR_REPOSITORY:coinbase-$IMAGE_TAG"
+            docker run -d --name coinbase -p 80:8080 "$ECR_REGISTRY/$ECR_REPOSITORY:coinbase-latest"
           EOF
 
           # Clean up the private key file
