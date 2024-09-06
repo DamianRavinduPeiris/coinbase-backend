@@ -9,6 +9,6 @@ RUN mvn clean install
 FROM eclipse-temurin:21-jre
 WORKDIR /app
 ##The build name is specified in the pom.xml file.
-COPY --from=build /app/target/github-actions-demo-0.0.1-SNAPSHOT.jar github-actions-demo.jar
+COPY --from=build /app/target/coinbase.jar coinbase.jar
 EXPOSE 8080
 CMD ["java", "-jar", "coinbase.jar"]
