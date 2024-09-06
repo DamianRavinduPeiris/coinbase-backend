@@ -1,7 +1,5 @@
 package com.damian.coinbase.advisor;
 
-import com.damian.coinbase.exceptions.CoinAlreadyExists;
-import com.damian.coinbase.exceptions.CoinDoesNotExists;
 import com.damian.coinbase.response.Response;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
