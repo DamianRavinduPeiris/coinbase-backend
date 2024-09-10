@@ -53,7 +53,7 @@ jobs:
       - name: Set up Kubernetes CLI
         uses: azure/setup-kubectl@v4
         with:
-          version: '1.31.0'
+          version: 'v1.31.0' #Obtained from https://storage.googleapis.com/kubernetes-release/release/stable.txt Make sure to add a v before the version number.
 
       # Step 8: Configure kubectl with kubeconfig
       - name: Configure kubectl
