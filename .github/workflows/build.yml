@@ -53,7 +53,7 @@ jobs:
       - name: Set up Kubernetes CLI
         uses: azure/setup-kubectl@v4
         with:
-          version: '1.25.0'
+          version: '1.31.0'
 
       # Step 8: Configure kubectl with kubeconfig
       - name: Configure kubectl
