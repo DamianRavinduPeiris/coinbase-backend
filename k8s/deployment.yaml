@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: coinbase-deployment
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: coinbase
+  template:
+    metadata:
+      labels:
+        app: coinbase
+    spec:
+      containers:
+        - name: coinbase
+          image: 211125698062.dkr.ecr.ap-south-1.amazonaws.com/coinbase-docker-repo:latest
+          ports:
+            - containerPort: 8080
