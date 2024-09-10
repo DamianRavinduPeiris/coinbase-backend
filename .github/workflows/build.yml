@@ -59,7 +59,13 @@ jobs:
       - name: Configure kubectl
         env:
           KUBECONFIG: ${{ secrets.KUBECONFIG }}
-        run: echo "$KUBECONFIG" | base64 --decode > $HOME/.kube/config
+        run: |
+          # Create the .kube directory if it doesn't exist
+          mkdir -p $HOME/.kube
+
+          # Decode and write the kubeconfig file
+          echo "$KUBECONFIG" | base64 --decode > $HOME/.kube/config
+
 
       # Step 9: Apply Kubernetes manifests
       - name: Deploy to Kubernetes
