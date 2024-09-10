@@ -51,7 +51,7 @@ jobs:
 
       # Step 7: Set up Kubernetes CLI (kubectl)
       - name: Set up Kubernetes CLI
-        uses: azure/setup-kubectl@v1
+        uses: azure/setup-kubectl@v4
         with:
           version: '1.25.0'
 
