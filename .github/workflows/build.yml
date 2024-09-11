@@ -62,6 +62,10 @@ jobs:
         run: |
           # Create the .kube directory if it doesn't exist
           mkdir -p $HOME/.kube
+          
+           # Debugging: Print the entire KUBECONFIG value for verification
+            echo "Full KUBECONFIG value:"
+            echo "$KUBECONFIG"
 
           # Decode and write the kubeconfig file
           echo "$KUBECONFIG" | base64 --decode > $HOME/.kube/config
