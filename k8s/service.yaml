@@ -6,6 +6,7 @@ spec:
   type: LoadBalancer
   selector:
     app: coinbase
+    version: green # Change this to "blue" for Blue environment.
   ports:
     - protocol: TCP
       port: 80
