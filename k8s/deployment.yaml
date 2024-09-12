@@ -14,6 +14,6 @@ spec:
     spec:
       containers:
         - name: coinbase
-          image: 211125698062.dkr.ecr.ap-south-1.amazonaws.com/coinbase-docker-repo:latest
+          image: 211125698062.dkr.ecr.ap-south-1.amazonaws.com/coinbase-docker-repo:coinbase-latest
           ports:
             - containerPort: 8080
