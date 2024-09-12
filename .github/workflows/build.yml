@@ -63,16 +63,26 @@ jobs:
           # Create the .kube directory if it doesn't exist
           mkdir -p $HOME/.kube
           
-           # Debugging: Print the entire KUBECONFIG value for verification
-            echo "Full KUBECONFIG value:"
-            echo "$KUBECONFIG"
+          # Debugging: Print the entire KUBECONFIG value for verification
+          echo "Full KUBECONFIG value:"
+          echo "$KUBECONFIG"
 
           # Decode and write the kubeconfig file
           echo "$KUBECONFIG" | base64 --decode > $HOME/.kube/config
-
 
       # Step 9: Apply Kubernetes manifests
       - name: Deploy to Kubernetes
         run: |
           kubectl apply -f k8s/deployment.yaml
           kubectl apply -f k8s/service.yaml
+
+      # Step 10: Install Newman
+      - name: Install Newman
+        run: npm install -g newman
+
+      # Step 11: Run Postman Collection with Newman
+      - name: Run Postman Collection
+        env:
+          POSTMAN_API_KEY: ${{ secrets.POSTMAN_API_KEY }}
+        run: |
+          newman run https://api.postman.com/collections/27406561-af7f744d-2fad-475d-8cd9-27fa633d78db?access_key=$POSTMAN_API_KEY
