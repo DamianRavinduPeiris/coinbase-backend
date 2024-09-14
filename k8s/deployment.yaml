@@ -16,9 +16,10 @@ spec:
     spec:
       containers:
         - name: coinbase
-          image: 211125698062.dkr.ecr.ap-south-1.amazonaws.com/coinbase-docker-repo:coinbase-latest
+          image: 211125698062.dkr.ecr.ap-south-1.amazonaws.com/coinbase-docker-repo:coinbase-${IMAGE_TAG}
           ports:
             - containerPort: 8080
+          imagePullPolicy: Always
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -38,7 +39,7 @@ spec:
     spec:
       containers:
         - name: coinbase
-          image: 211125698062.dkr.ecr.ap-south-1.amazonaws.com/coinbase-docker-repo:coinbase-latest # Use new image here
+          image: 211125698062.dkr.ecr.ap-south-1.amazonaws.com/coinbase-docker-repo:coinbase-${IMAGE_TAG}
           ports:
             - containerPort: 8080
           imagePullPolicy: Always

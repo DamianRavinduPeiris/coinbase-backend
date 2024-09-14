@@ -70,6 +70,8 @@ jobs:
         run: |
           kubectl apply -f k8s/deployment.yaml
           kubectl apply -f k8s/service.yaml
+          kubectl set image deployment/coinbase-deployment-blue coinbase=$ECR_REGISTRY/$ECR_REPOSITORY:coinbase-${IMAGE_TAG}
+          kubectl set image deployment/coinbase-deployment-green coinbase=$ECR_REGISTRY/$ECR_REPOSITORY:coinbase-${IMAGE_TAG}
 
       # Step 10: Install Newman
       - name: Install Newman
