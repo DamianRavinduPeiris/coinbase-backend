@@ -44,4 +44,9 @@ public class CoinController {
         coinBaseService.deleteCoin(id);
         return ResponseEntity.ok(new Response(200, "Coin Deleted successfully!", null));
     }
+
+    @GetMapping(path = "/health")
+    public ResponseEntity<Response> healthCheck() {
+        return ResponseEntity.ok(new Response(200, "Coinbase service is up and running!", null));
+    }
 }
