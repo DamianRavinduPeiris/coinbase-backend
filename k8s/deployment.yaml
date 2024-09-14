@@ -39,7 +39,7 @@ spec:
     spec:
       containers:
         - name: coinbase
-          image: 211125698062.dkr.ecr.ap-south-1.amazonaws.com/coinbase-docker-repo:coinbase-${IMAGE_TAG}
+          image: damianpeiris/github-actions-demo
           ports:
             - containerPort: 8080
           imagePullPolicy: Always
