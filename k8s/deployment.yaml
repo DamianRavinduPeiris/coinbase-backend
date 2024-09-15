@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: coinbase
-          image: 211125698062.dkr.ecr.ap-south-1.amazonaws.com/coinbase-docker-repo:coinbase-latest # Update this to latest
+          image: 211125698062.dkr.ecr.ap-south-1.amazonaws.com/coinbase-docker-repo:coinbase-latest # Placeholder image
           ports:
             - containerPort: 8080
           imagePullPolicy: Always

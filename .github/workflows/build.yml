@@ -14,16 +14,7 @@ jobs:
       # Step 1: Checkout the latest code from the repository
       - uses: actions/checkout@v4
 
-      # Step 2: Capture the Commit SHA
-      - name: Capture Commit SHA
-        id: get_sha
-        run: echo "COMMIT_SHA=${GITHUB_SHA}" >> $GITHUB_ENV
-
-      # Step 3: Debug Commit SHA
-      - name: Debug Commit SHA
-        run: echo "Commit SHA is ${{ env.COMMIT_SHA }}"
-
-      # Step 4: Set up JDK 21 for the build process
+      # Step 2: Set up JDK 21 for the build process
       - name: Setting up JDK 21
         uses: actions/setup-java@v4
         with:
@@ -31,11 +22,11 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      # Step 5: Build the project using Maven
+      # Step 3: Build the project using Maven
       - name: Build with Maven
         run: mvn clean install
 
-      # Step 6: Setup AWS ECR Details
+      # Step 4: Setup AWS ECR Details
       - name: Setting up AWS ECR Details
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -43,20 +34,28 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      # Step 7: Login to Amazon ECR
+      # Step 5: Login to Amazon ECR
       - name: Login to Amazon ECR
         id: login-pf-aws-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      # Step 8: Build and push Docker image with the captured commit SHA as the tag
+      # Step 6: Build and push Docker image with latest commit hash as tag
       - name: Build and push Docker image
         env:
           ECR_REGISTRY: ${{ steps.login-pf-aws-ecr.outputs.registry }}
           ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
-          IMAGE_TAG: ${{ env.COMMIT_SHA }}
+          IMAGE_TAG: ${{ github.sha }}  # Using commit SHA as the image tag
         run: |
-          docker build --no-cache -t $ECR_REGISTRY/$ECR_REPOSITORY:coinbase-${IMAGE_TAG} .
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:coinbase-${IMAGE_TAG}
+          docker build --no-cache -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+
+      # Step 7: Make the shell script executable
+      - name: Make update-deployment.sh executable
+        run: chmod +x scripts/update-deployment.sh
+
+      # Step 8: Run the shell script to update deployment.yaml
+      - name: Update deployment.yaml with latest commit hash
+        run: scripts/update-deployment.sh
 
       # Step 9: Login to Docker Hub for pulling the green image
       - name: Login to Docker Hub
@@ -83,14 +82,12 @@ jobs:
           mkdir -p $HOME/.kube
           echo "$KUBECONFIG" | base64 --decode > $HOME/.kube/config
 
-      # Step 13: Apply Kubernetes manifests and set image with commit SHA
+      # Step 13: Apply Kubernetes manifests
       - name: Deploy to Kubernetes
-        env:
-          COMMIT_SHA: ${{ env.COMMIT_SHA }}
         run: |
           kubectl apply -f k8s/deployment.yaml
           kubectl apply -f k8s/service.yaml
-          kubectl set image deployment/coinbase-deployment-blue coinbase=$ECR_REGISTRY/$ECR_REPOSITORY:coinbase-${COMMIT_SHA}
+          kubectl set image deployment/coinbase-deployment-blue coinbase=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           kubectl set image deployment/coinbase-deployment-green coinbase=damianpeiris/github-actions-demo
 
       # Step 14: Install Newman
