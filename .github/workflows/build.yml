@@ -1,4 +1,4 @@
-name: coinbase-build
+name: CI/CD Pipeline
 
 on:
   push:
@@ -46,53 +46,35 @@ jobs:
           ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
           IMAGE_TAG: ${{ github.sha }}  # Using commit SHA as the image tag
         run: |
-          echo "ECR_REGISTRY: $ECR_REGISTRY"
-          echo "ECR_REPOSITORY: $ECR_REPOSITORY"
-          echo "IMAGE_TAG: ${IMAGE_TAG}"
-          
-          if [ -z "$ECR_REGISTRY" ]; then
-            echo "Error: ECR_REGISTRY is not set!"
-            exit 1
-          fi
-          
-          if [ -z "$ECR_REPOSITORY" ]; then
-            echo "Error: ECR_REPOSITORY is not set!"
-            exit 1
-          fi
-          
           docker build --no-cache -t $ECR_REGISTRY/$ECR_REPOSITORY:coinbase-${IMAGE_TAG} .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:coinbase-${IMAGE_TAG}
 
-      # Step 7: Check final image name
-      - name: Check final image name
-        run: echo "$ECR_REGISTRY/$ECR_REPOSITORY:coinbase-${IMAGE_TAG}"
+      - name: Checking Image TAG value
+        run: echo $IMAGE_TAG
 
-      # Step 8: Login to Docker Hub for pulling the green image
+      # Step 7: Login to Docker Hub for pulling the green image
       - name: Login to Docker Hub
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
 
-      # Step 9: Pull the green Docker image from Docker Hub
+      # Step 8: Pull the green Docker image
       - name: Pull Green Docker Image
         run: docker pull damianpeiris/github-actions-demo
 
-      # Step 10: Set up Kubernetes CLI (kubectl)
+      # Step 9: Set up Kubernetes CLI (kubectl)
       - name: Set up Kubernetes CLI
         uses: azure/setup-kubectl@v4
         with:
           version: 'v1.31.0'
 
-      # Step 11: Configure kubectl with kubeconfig
-      - name: Configure kubectl
-        env:
-          KUBECONFIG: ${{ secrets.KUBECONFIG }}
+      # Step 10: Substitute IMAGE_TAG in Kubernetes manifests
+      - name: Substitute IMAGE_TAG in Kubernetes Manifests
         run: |
-          mkdir -p $HOME/.kube
-          echo "$KUBECONFIG" | base64 --decode > $HOME/.kube/config
+          sed -i 's|coinbase-image-tag|$ECR_REGISTRY/$ECR_REPOSITORY:coinbase-${IMAGE_TAG}|g' k8s/deployment.yaml
 
-      # Step 12: Deploy to Kubernetes
+      # Step 11: Apply Kubernetes manifests
       - name: Deploy to Kubernetes
         run: |
           kubectl apply -f k8s/deployment.yaml
@@ -100,11 +82,11 @@ jobs:
           kubectl set image deployment/coinbase-deployment-blue coinbase=$ECR_REGISTRY/$ECR_REPOSITORY:coinbase-${IMAGE_TAG}
           kubectl set image deployment/coinbase-deployment-green coinbase=damianpeiris/github-actions-demo
 
-      # Step 13: Install Newman for running Postman collections
+      # Step 12: Install Newman
       - name: Install Newman
         run: npm install -g newman
 
-      # Step 14: Run Postman Collection with Newman
+      # Step 13: Run Postman Collection with Newman
       - name: Run Postman Collection
         env:
           POSTMAN_API_KEY: ${{ secrets.POSTMAN_API_KEY }}
