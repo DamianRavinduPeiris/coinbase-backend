@@ -1,96 +1,74 @@
-# Runbook for `coinbase-build` Workflow
+# Coinbase Build Runbook
 
-## Triggering Events
-- The workflow is triggered on:
-  - **Push** to the `master` branch.
-  - **Pull Request** to the `master` branch.
+This runbook describes the build and deployment pipeline for the Coinbase project. The pipeline is triggered on pushes and pull requests to the `master` branch.
 
-## Job: `build`
+## Workflow Triggers
 
-### Step 1: Checkout the Latest Code
-- **Action**: `actions/checkout@v4`
-- **Description**: Checks out the latest code from the repository.
-- **Troubleshooting**:
-  - Ensure that the repository has the correct permissions for GitHub Actions to pull the code.
+- **Push to master**
+- **Pull request to master**
 
-### Step 2: Set up JDK 21
-- **Action**: `actions/setup-java@v4`
-- **Description**: Sets up JDK 21 (Temurin distribution) and configures Maven caching.
-- **Troubleshooting**:
-  - If JDK installation fails, verify the specified Java version (`21`) and ensure Temurin is the correct distribution.
+## Job: Build and Deploy
 
-### Step 3: Build with Maven
-- **Command**: `mvn clean install`
-- **Description**: Builds the project using Maven.
-- **Troubleshooting**:
-  - Check Maven logs for dependency, compilation, or test failures.
-  - Ensure all required dependencies are defined in the `pom.xml`.
+### 1. Checkout Latest Code
+- **Step:** `actions/checkout@v4`
+- **Description:** The latest code from the `master` branch is checked out.
 
-### Step 4: Set up AWS ECR Details
-- **Action**: `aws-actions/configure-aws-credentials@v4`
-- **Description**: Configures AWS credentials for access to ECR.
-- **Troubleshooting**:
-  - Check that `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, and `AWS_REGION` are correctly set in GitHub Secrets.
+### 2. Set Up JDK 21
+- **Step Name:** `Setting up JDK 21`
+- **Action:** `actions/setup-java@v4`
+- **Description:** JDK 21 is installed using the Temurin distribution, and Maven caching is enabled for efficiency.
 
-### Step 5: Login to Amazon ECR
-- **Action**: `aws-actions/amazon-ecr-login@v2`
-- **Description**: Logs in to Amazon ECR to push Docker images.
-- **Troubleshooting**:
-  - Verify that the `ECR` permissions are set up correctly in AWS.
+### 3. Build with Maven
+- **Step Name:** `Build with Maven`
+- **Description:** Runs `mvn clean install` to build the project.
 
-### Step 6: Build and Push Docker Image
-- **Command**:
-  ```bash
-  docker build --no-cache -t $ECR_REGISTRY/$ECR_REPOSITORY:coinbase-$(git rev-parse --short HEAD) .
-  docker push $ECR_REGISTRY/$ECR_REPOSITORY:coinbase-$(git rev-parse --short HEAD)
-  ```
-- **Description**: Builds the Docker image and tags it with the latest commit hash, then pushes it to the ECR repository.
-- **Troubleshooting**:
-  - If the image build fails, check the Dockerfile for issues.
-  - If the push fails, ensure that the `ECR_REPOSITORY` secret is correctly set.
+### 4. Set Up AWS ECR Credentials
+- **Step Name:** `Setting up AWS ECR Details`
+- **Action:** `aws-actions/configure-aws-credentials@v4`
+- **Description:** AWS credentials are configured using secrets for access to AWS services.
 
-### Step 7: Set up Kubernetes CLI (kubectl)
-- **Action**: `azure/setup-kubectl@v4`
-- **Description**: Installs the `kubectl` CLI.
-- **Troubleshooting**:
-  - If installation fails, check the specified version (`v1.31.0`) and the correctness of the version number.
+### 5. Login to Amazon ECR
+- **Step Name:** `Login to Amazon ECR`
+- **Action:** `aws-actions/amazon-ecr-login@v2`
+- **Description:** Logs into Amazon ECR, and outputs the ECR registry URL for further use.
 
-### Step 8: Configure `kubectl` with Kubeconfig
-- **Environment Variable**: `KUBECONFIG`
-- **Description**: Configures `kubectl` using the Kubernetes configuration stored in GitHub Secrets.
-- **Troubleshooting**:
-  - Ensure the `KUBECONFIG` value in GitHub Secrets is correct.
-  - If `kubectl` fails to authenticate, verify the contents of the kubeconfig.
+### 6. Build and Push Docker Image
+- **Step Name:** `Build and push Docker image`
+- **Description:** 
+  - Builds a Docker image using the latest code.
+  - The image is tagged with `coinbase-latest` and pushed to the Amazon ECR repository.
 
-### Step 9: Apply Kubernetes Manifests
-- **Command**:
-  ```bash
-  kubectl apply -f k8s/deployment.yaml
-  kubectl apply -f k8s/service.yaml
-  ```
-- **Description**: Deploys the application using Kubernetes manifests.
-- **Troubleshooting**:
-  - If deployment fails, check the manifest files for syntax errors.
-  - Ensure the Kubernetes cluster is available and accessible.
+### 7. Set Up Kubernetes CLI
+- **Step Name:** `Set up Kubernetes CLI`
+- **Action:** `azure/setup-kubectl@v4`
+- **Description:** Installs `kubectl` version 1.31.0 for interacting with Kubernetes clusters.
 
-### Step 10: Install Newman
-- **Command**: `npm install -g newman`
-- **Description**: Installs Newman globally, used to run Postman collections.
-- **Troubleshooting**:
-  - Ensure `npm` is installed and available.
-  - If installation fails, check for network or permission issues.
+### 8. Configure kubectl
+- **Step Name:** `Configure kubectl`
+- **Description:**
+  - Sets up `kubectl` using the provided Kubeconfig.
+  - Decodes the base64-encoded Kubeconfig and saves it to the default location.
 
-### Step 11: Run Postman Collection with Newman
-- **Command**:
-  ```bash
-  newman run https://api.postman.com/collections/27406561-af7f744d-2fad-475d-8cd9-27fa633d78db?access_key=$POSTMAN_API_KEY
-  ```
-- **Description**: Runs the Postman collection using the Newman CLI, with the Postman API key retrieved from GitHub Secrets.
-- **Troubleshooting**:
-  - Ensure that the `POSTMAN_API_KEY` is set correctly in GitHub Secrets.
-  - If the collection run fails, verify the collection URL and API key.
+### 9. Deploy to Kubernetes
+- **Step Name:** `Deploy to Kubernetes`
+- **Description:**
+  - Applies the Kubernetes deployment and service manifests.
+  - Restarts the `coinbase-deployment-blue` and `coinbase-deployment-green` deployments for a blue-green deployment strategy.
 
----
+### 10. Install Newman
+- **Step Name:** `Install Newman`
+- **Description:** Installs Newman, a CLI for running Postman collections, via npm.
 
-2024 ©️ Damian Peiris All Rights Reserved.
-```
+### 11. Run Postman Collection
+- **Step Name:** `Run Postman Collection`
+- **Description:** 
+  - Executes a Postman collection using Newman.
+  - The Postman collection URL is accessed using the `POSTMAN_API_KEY` from secrets.
+
+## Notes
+- Ensure all necessary secrets (AWS credentials, ECR repository, Postman API key, Kubeconfig) are available in your GitHub repository.
+- This pipeline uses blue-green deployment to minimize downtime during deployments.
+
+
+Damian Peiris ©️ All rights reserved 2024.
+
