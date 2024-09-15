@@ -46,6 +46,20 @@ jobs:
           ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
           IMAGE_TAG: ${{ github.sha }}  # Using commit SHA as the image tag
         run: |
+          echo "ECR_REGISTRY: $ECR_REGISTRY"
+          echo "ECR_REPOSITORY: $ECR_REPOSITORY"
+          echo "IMAGE_TAG: ${IMAGE_TAG}"
+          
+          if [ -z "$ECR_REGISTRY" ]; then
+            echo "Error: ECR_REGISTRY is not set!"
+            exit 1
+          fi
+          
+          if [ -z "$ECR_REPOSITORY" ]; then
+            echo "Error: ECR_REPOSITORY is not set!"
+            exit 1
+          fi
+          
           docker build --no-cache -t $ECR_REGISTRY/$ECR_REPOSITORY:coinbase-${IMAGE_TAG} .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:coinbase-${IMAGE_TAG}
 
