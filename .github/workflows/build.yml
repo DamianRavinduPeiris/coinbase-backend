@@ -1,4 +1,4 @@
-name: CI/CD Pipeline
+name: coinbase-build
 
 on:
   push:
@@ -14,7 +14,16 @@ jobs:
       # Step 1: Checkout the latest code from the repository
       - uses: actions/checkout@v4
 
-      # Step 2: Set up JDK 21 for the build process
+      # Step 2: Capture the Commit SHA
+      - name: Capture Commit SHA
+        id: get_sha
+        run: echo "COMMIT_SHA=${GITHUB_SHA}" >> $GITHUB_ENV
+
+      # Step 3: Debug Commit SHA
+      - name: Debug Commit SHA
+        run: echo "Commit SHA is ${{ env.COMMIT_SHA }}"
+
+      # Step 4: Set up JDK 21 for the build process
       - name: Setting up JDK 21
         uses: actions/setup-java@v4
         with:
@@ -22,11 +31,11 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      # Step 3: Build the project using Maven
+      # Step 5: Build the project using Maven
       - name: Build with Maven
         run: mvn clean install
 
-      # Step 4: Setup AWS ECR Details
+      # Step 6: Setup AWS ECR Details
       - name: Setting up AWS ECR Details
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -34,59 +43,61 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      # Step 5: Login to Amazon ECR
+      # Step 7: Login to Amazon ECR
       - name: Login to Amazon ECR
         id: login-pf-aws-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      # Step 6: Build and push Docker image with latest commit hash as tag
+      # Step 8: Build and push Docker image with the captured commit SHA as the tag
       - name: Build and push Docker image
         env:
           ECR_REGISTRY: ${{ steps.login-pf-aws-ecr.outputs.registry }}
           ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
-          IMAGE_TAG: ${{ github.sha }}  # Using commit SHA as the image tag
+          IMAGE_TAG: ${{ env.COMMIT_SHA }}
         run: |
           docker build --no-cache -t $ECR_REGISTRY/$ECR_REPOSITORY:coinbase-${IMAGE_TAG} .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:coinbase-${IMAGE_TAG}
 
-      - name: Checking Image TAG value
-        run: echo $IMAGE_TAG
-
-      # Step 7: Login to Docker Hub for pulling the green image
+      # Step 9: Login to Docker Hub for pulling the green image
       - name: Login to Docker Hub
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
 
-      # Step 8: Pull the green Docker image
+      # Step 10: Pull the green Docker image
       - name: Pull Green Docker Image
         run: docker pull damianpeiris/github-actions-demo
 
-      # Step 9: Set up Kubernetes CLI (kubectl)
+      # Step 11: Set up Kubernetes CLI (kubectl)
       - name: Set up Kubernetes CLI
         uses: azure/setup-kubectl@v4
         with:
           version: 'v1.31.0'
 
-      # Step 10: Substitute IMAGE_TAG in Kubernetes manifests
-      - name: Substitute IMAGE_TAG in Kubernetes Manifests
+      # Step 12: Configure kubectl with kubeconfig
+      - name: Configure kubectl
+        env:
+          KUBECONFIG: ${{ secrets.KUBECONFIG }}
         run: |
-          sed -i 's|coinbase-image-tag|$ECR_REGISTRY/$ECR_REPOSITORY:coinbase-${IMAGE_TAG}|g' k8s/deployment.yaml
+          mkdir -p $HOME/.kube
+          echo "$KUBECONFIG" | base64 --decode > $HOME/.kube/config
 
-      # Step 11: Apply Kubernetes manifests
+      # Step 13: Apply Kubernetes manifests and set image with commit SHA
       - name: Deploy to Kubernetes
+        env:
+          COMMIT_SHA: ${{ env.COMMIT_SHA }}
         run: |
           kubectl apply -f k8s/deployment.yaml
           kubectl apply -f k8s/service.yaml
-          kubectl set image deployment/coinbase-deployment-blue coinbase=$ECR_REGISTRY/$ECR_REPOSITORY:coinbase-${IMAGE_TAG}
+          kubectl set image deployment/coinbase-deployment-blue coinbase=$ECR_REGISTRY/$ECR_REPOSITORY:coinbase-${COMMIT_SHA}
           kubectl set image deployment/coinbase-deployment-green coinbase=damianpeiris/github-actions-demo
 
-      # Step 12: Install Newman
+      # Step 14: Install Newman
       - name: Install Newman
         run: npm install -g newman
 
-      # Step 13: Run Postman Collection with Newman
+      # Step 15: Run Postman Collection with Newman
       - name: Run Postman Collection
         env:
           POSTMAN_API_KEY: ${{ secrets.POSTMAN_API_KEY }}

@@ -16,10 +16,11 @@ spec:
     spec:
       containers:
         - name: coinbase
-          image: coinbase-image-tag  # Placeholder, replaced in GitHub Actions
+          image: 211125698062.dkr.ecr.ap-south-1.amazonaws.com/coinbase-docker-repo:coinbase-latest # Update this to latest
           ports:
             - containerPort: 8080
           imagePullPolicy: Always
+
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -39,7 +40,7 @@ spec:
     spec:
       containers:
         - name: coinbase
-          image: damianpeiris/github-actions-demo  # Static green image
+          image: damianpeiris/github-actions-demo
           ports:
             - containerPort: 8080
           imagePullPolicy: Always
