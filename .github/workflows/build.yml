@@ -51,11 +51,11 @@ jobs:
 
       # Step 7: Make the shell script executable
       - name: Make update-deployment.sh executable
-        run: chmod +x scripts/update-deployment.sh
+        run: chmod +x update-deployment.sh
 
       # Step 8: Run the shell script to update deployment.yaml
       - name: Update deployment.yaml with latest commit hash
-        run: scripts/update-deployment.sh
+        run: update-deployment.sh
 
       # Step 9: Login to Docker Hub for pulling the green image
       - name: Login to Docker Hub
