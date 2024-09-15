@@ -49,4 +49,8 @@ public class CoinController {
     public ResponseEntity<Response> healthCheck() {
         return ResponseEntity.ok(new Response(200, "Coinbase service is up and running!", null));
     }
+    @GetMapping(path = "/health2")
+    public ResponseEntity<Response> healthCheck2() {
+        return ResponseEntity.ok(new Response(200, "Coinbase service is up and running!", null));
+    }
 }
