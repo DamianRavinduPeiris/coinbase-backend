@@ -44,57 +44,39 @@ jobs:
         env:
           ECR_REGISTRY: ${{ steps.login-pf-aws-ecr.outputs.registry }}
           ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
-          IMAGE_TAG: ${{ github.sha }}  # Using commit SHA as the image tag
         run: |
-          docker build --no-cache -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker build --no-cache -t $ECR_REGISTRY/$ECR_REPOSITORY:coinbase-latest .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:coinbase-latest
 
-      # Step 7: Make the shell script executable
-      - name: Make update-deployment.sh executable
-        run: chmod +x update-deployment.sh
-
-      # Step 8: Run the shell script to update deployment.yaml
-      - name: Update deployment.yaml with latest commit hash
-        run: update-deployment.sh
-
-      # Step 9: Login to Docker Hub for pulling the green image
-      - name: Login to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKER_HUB_USERNAME }}
-          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
-
-      # Step 10: Pull the green Docker image
-      - name: Pull Green Docker Image
-        run: docker pull damianpeiris/github-actions-demo
-
-      # Step 11: Set up Kubernetes CLI (kubectl)
+      # Step 7: Set up Kubernetes CLI (kubectl)
       - name: Set up Kubernetes CLI
         uses: azure/setup-kubectl@v4
         with:
           version: 'v1.31.0'
 
-      # Step 12: Configure kubectl with kubeconfig
+      # Step 8: Configure kubectl with kubeconfig
       - name: Configure kubectl
         env:
           KUBECONFIG: ${{ secrets.KUBECONFIG }}
         run: |
           mkdir -p $HOME/.kube
+          echo "Full KUBECONFIG value:"
+          echo "$KUBECONFIG"
           echo "$KUBECONFIG" | base64 --decode > $HOME/.kube/config
 
-      # Step 13: Apply Kubernetes manifests
+      # Step 9: Apply Kubernetes manifests
       - name: Deploy to Kubernetes
         run: |
           kubectl apply -f k8s/deployment.yaml
           kubectl apply -f k8s/service.yaml
-          kubectl set image deployment/coinbase-deployment-blue coinbase=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-          kubectl set image deployment/coinbase-deployment-green coinbase=damianpeiris/github-actions-demo
+          kubectl rollout restart deployment/coinbase-deployment-blue
+          kubectl rollout restart deployment/coinbase-deployment-green
 
-      # Step 14: Install Newman
+      # Step 10: Install Newman
       - name: Install Newman
         run: npm install -g newman
 
-      # Step 15: Run Postman Collection with Newman
+      # Step 11: Run Postman Collection with Newman
       - name: Run Postman Collection
         env:
           POSTMAN_API_KEY: ${{ secrets.POSTMAN_API_KEY }}
