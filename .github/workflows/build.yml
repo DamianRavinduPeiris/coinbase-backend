@@ -45,10 +45,12 @@ jobs:
           ECR_REGISTRY: ${{ steps.login-pf-aws-ecr.outputs.registry }}
           ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
           IMAGE_TAG: ${{ github.sha }}  # Using commit SHA as the image tag
+          IMAGE_URI: $ECR_REGISTRY/$ECR_REPOSITORY:coinbase-${IMAGE_TAG}
         run: |
-          docker build --no-cache -t $ECR_REGISTRY/$ECR_REPOSITORY:coinbase-${IMAGE_TAG} .
+          docker build --no-cache -t $IMAGE_URI .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:coinbase-${IMAGE_TAG}
-
+      - name: Checking Image TAG value.
+        run: echo $IMAGE_TAG
       # Step 7: Login to Docker Hub for pulling the green image
       - name: Login to Docker Hub
         uses: docker/login-action@v2
@@ -79,7 +81,7 @@ jobs:
         run: |
           kubectl apply -f k8s/deployment.yaml
           kubectl apply -f k8s/service.yaml
-          kubectl set image deployment/coinbase-deployment-blue coinbase=$ECR_REGISTRY/$ECR_REPOSITORY:coinbase-${IMAGE_TAG}
+          kubectl set image deployment/coinbase-deployment-blue coinbase=$IMAGE_URI
           kubectl set image deployment/coinbase-deployment-green coinbase=damianpeiris/github-actions-demo
 
       # Step 12: Install Newman
